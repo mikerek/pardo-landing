@@ -1,0 +1,53 @@
+:root {
+  --background: #ffffff;
+  /* Clean white background */
+  --foreground: #111111;
+  --primary: #e60000;
+  /* Pardo Red */
+  --primary-hover: #b30000;
+  --secondary: #f4f4f4;
+  /* Light grey for secondary buttons/cards */
+  --secondary-hover: #e0e0e0;
+  --border: #eaeaea;
+  --font-sans: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Outfit", "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
