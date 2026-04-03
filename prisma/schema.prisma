@@ -1,0 +1,292 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// V4: NexusERP Enterprise SaaS Architecture
+// ==========================================
+
+// --- NextAuth Models ---
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("ADMIN") // ROOT, ADMIN
+
+  accounts Account[]
+  sessions Session[]
+
+  // A user can manage multiple businesses (Tenants)
+  businesses Business[] @relation("UserBusinesses")
+  
+  // A user can be linked to physical Employee records across tenants
+  employees Employee[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// --- Tenant Model ---
+model Business {
+  id        Int       @id @default(autoincrement())
+  uuid      String    @unique @default(uuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  isActive  Boolean   @default(true)
+  name      String
+  domain    String?
+
+  // Datos Fiscales - México (AEC Legal Compliance)
+  razonSocial    String?
+  rfc            String?
+  regimenFiscal  String?
+  codigoPostal   String?
+  direccion      String?
+
+  // SaaS Billing & Reporting (AEC C-Level Analytics)
+  subscriptionPlan String  @default("FREE") // FREE, PRO, ENTERPRISE
+  subscriptionStatus String @default("ACTIVE") // ACTIVE, PAST_DUE, CANCELLED
+  nextBillingDate  DateTime?
+  monthlyFee       Float   @default(0.0)
+  totalRevenue     Float   @default(0.0)
+  
+  // Corporate Identity
+  industry         String  @default("RETAIL") // RETAIL, RESTAURANT, SERVICES, MANUFACTURING
+
+  users        User[]                 @relation("UserBusinesses")
+  customers    Customer[]
+  products     Product[]
+  employees    Employee[]
+  suppliers    Supplier[]
+  loyaltyRules LoyaltyRule[]
+  inventoryTx  InventoryTransaction[]
+
+  // Analytics
+  visits PageVisit[]
+  clicks ActionClick[]
+}
+
+// --- Analytics ---
+model PageVisit {
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  path       String
+  userAgent  String?
+  businessId Int
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model ActionClick {
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  target     String // e.g., 'Rappi', 'UberEats', 'Instagram'
+  path       String
+  businessId Int
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+// --- ERP Modules ---
+model Customer {
+  id             Int       @id @default(autoincrement())
+  uuid           String    @unique @default(uuid())
+  customerNumber String?   @unique
+  businessId     Int
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  isActive       Boolean   @default(true)
+  name           String
+  phone          String?
+  email          String?
+  notes          String?
+  loyaltyPoints  Int       @default(0)
+
+  business  Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  loyaltyTx LoyaltyTransaction[]
+}
+
+model LoyaltyRule {
+  id             Int      @id @default(autoincrement())
+  businessId     Int
+  createdAt      DateTime @default(now())
+  isActive       Boolean  @default(true)
+  name           String
+  ruleType       String   @default("PURCHASE") // INCREASED FLEXIBILITY: PURCHASE or ACTION
+  purchaseAmount Float?
+  pointsEarned   Int
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model LoyaltyTransaction {
+  id          Int      @id @default(autoincrement())
+  customerId  Int
+  createdAt   DateTime @default(now())
+  points      Int // positive (earned) or negative (redeemed)
+  description String?
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Employee {
+  id          Int       @id @default(autoincrement())
+  uuid        String    @unique @default(uuid())
+  businessId  Int
+  userId      String?   // Logical User Link (The lock for system access)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+  
+  // Basic Data
+  firstName   String    @default("")
+  lastName    String    @default("")
+  dob         DateTime?
+  address     String?
+  phone       String?
+  email       String?
+
+  // Legal & Compliance (Mexico HCM)
+  curp        String?
+  rfc         String?
+  nss         String?
+  hireDate    DateTime  @default(now())
+  contractType String   @default("INDETERMINADO")
+
+  // Financial & Roles
+  role        String    @default("STAFF")
+  baseSalary  Float     @default(0.0)
+  paymentFreq String    @default("QUINCENAL")
+  bankClabe   String?
+  paymentMethod String  @default("TRANSFERENCIA")
+  bonuses     Float?    @default(0)
+
+  business         Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  payrollReceipts  PayrollReceipt[]
+  vacationRequests VacationRequest[]
+}
+
+model PayrollReceipt {
+  id          Int      @id @default(autoincrement())
+  employeeId  Int
+  createdAt   DateTime @default(now())
+  periodStart DateTime
+  periodEnd   DateTime
+  amount      Float
+  status      String   @default("PAID") // PENDING, PAID
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model VacationRequest {
+  id         Int      @id @default(autoincrement())
+  employeeId Int
+  createdAt  DateTime @default(now())
+  startDate  DateTime
+  endDate    DateTime
+  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  reason     String?
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  uuid        String    @unique @default(uuid())
+  businessId  Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+  name        String
+  description String?
+  price       Float
+  stock       Int       @default(0)
+  category    String // Burger, Side, Drink
+  imageUrl    String?
+
+  business    Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  inventoryTx InventoryTransaction[]
+}
+
+model InventoryTransaction {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  businessId Int
+  createdAt  DateTime @default(now())
+  type       String // INBOUND, OUTBOUND, ADJUSTMENT
+  quantity   Int
+  notes      String?
+  supplierId Int?
+
+  product  Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  supplier Supplier? @relation(fields: [supplierId], references: [id])
+}
+
+model Supplier {
+  id          Int       @id @default(autoincrement())
+  uuid        String    @unique @default(uuid())
+  businessId  Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  isActive    Boolean   @default(true)
+  name        String
+  contactName String?
+  phone       String?
+  email       String?
+  category    String? // Meat, Bread, Veggies, Packaging
+
+  business    Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  inventoryTx InventoryTransaction[]
+}
+
+// --- Landing Page Specifics ---
+model ReviewLike {
+  id             Int      @id @default(autoincrement())
+  createdAt      DateTime @default(now())
+  googleReviewId String   @unique
+  likesCount     Int      @default(0)
+}
