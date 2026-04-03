@@ -10,6 +10,7 @@ export default function Home() {
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [orderItem, setOrderItem] = useState<string | null>(null);
+  const [visibleReviews, setVisibleReviews] = useState(3);
 
   // Track page visit on mount
   useEffect(() => {
@@ -38,7 +39,9 @@ export default function Home() {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/reviews`);
         const data = await res.json();
         if (data.reviews) {
-          setReviews(data.reviews);
+          // Shuffle reviews to show randomization on every refresh
+          const shuffled = [...data.reviews].sort(() => Math.random() - 0.5);
+          setReviews(shuffled);
         }
       } catch (err) {
         console.error('Failed to fetch reviews', err);
@@ -50,19 +53,22 @@ export default function Home() {
   }, []);
 
   // Track click on outbound links
-  const handleOutboundClick = (target: string, url: string) => async (e: React.MouseEvent) => {
+  const handleOutboundClick = (target: string, url: string) => (e: React.MouseEvent) => {
     e.preventDefault();
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/track/click`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target, path: window.location.pathname, businessId: 1 }),
-      });
-    } catch (err) {
-      console.error('Failed to track click', err);
-    } finally {
-      window.location.href = url;
-    }
+    
+    // Tracking is secondary: we don't block the user's navigation for it.
+    // We send the beacon or a non-blocking fetch.
+    const trackingUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/track/click`;
+    
+    // Attempt tracking but proceed immediately
+    fetch(trackingUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target, path: window.location.pathname, businessId: 1 }),
+      keepalive: true, // Ensuring it completes even after page unload
+    }).catch(err => console.error('Silent track error', err));
+
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const handleLikeReview = async (reviewName: string) => {
@@ -129,7 +135,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* MENU FULL SCREEN MODAL / LIGHTBOX */}
+      {/* MENU FULL SCREEN MODAL / LIGHTBOX (PHOTOS ONLY) */}
       {selectedPhoto && (
         <div
           style={{
@@ -140,7 +146,7 @@ export default function Home() {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 9999,
+            zIndex: 9998,
           }}
         >
           <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
@@ -179,46 +185,6 @@ export default function Home() {
                 </div>
               )}
             </div>
-
-            {/* PLATFORM SELECTOR SUB-MODAL */}
-            {orderItem && (
-               <div style={{
-                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                 background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
-                 display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 200
-               }}>
-                 <div style={{ 
-                   background: '#1e293b', 
-                   padding: '3rem', 
-                   borderRadius: '24px', 
-                   boxShadow: '0 25px 50px -12px rgba(0,0,0,1)', 
-                   textAlign: 'center',
-                   border: '1px solid rgba(255,255,255,0.1)',
-                   maxWidth: '450px',
-                   width: '90%'
-                 }}>
-                   <h3 style={{ fontSize: '1.8rem', color: '#f8fafc', marginBottom: '0.5rem' }}>Excelente elección</h3>
-                   <p style={{ color: '#94a3b8', fontSize: '1.1rem', marginBottom: '2rem' }}>Pide tu <strong>{orderItem}</strong> ahora mismo por tu app favorita:</p>
-                   
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                     <a href="https://www.rappi.com.mx/restaurantes/1930332407-pardo-burger" target="_blank" rel="noopener noreferrer" style={{
-                       background: '#ff441f', color: '#fff', padding: '15px 20px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px'
-                     }}>
-                       🛵 Pedir por Rappi
-                     </a>
-                     <a href="https://www.ubereats.com/mx" target="_blank" rel="noopener noreferrer" style={{
-                       background: '#06C167', color: '#fff', padding: '15px 20px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px'
-                     }}>
-                       🚙 Pedir por Uber Eats
-                     </a>
-                     <button onClick={() => setOrderItem(null)} style={{ background: 'transparent', border: '1px solid #475569', color: '#cbd5e1', padding: '15px', borderRadius: '12px', fontSize: '1rem', marginTop: '10px', cursor: 'pointer' }}>
-                       Cancelar
-                     </button>
-                   </div>
-                 </div>
-               </div>
-            )}
-            
           </div>
         </div>
       )}
@@ -240,7 +206,7 @@ export default function Home() {
 
         <div className={styles.menuGrid}>
           {/* Item 1 */}
-          <div className={styles.card}>
+          <div className={styles.card} onClick={() => setOrderItem('Cheese Burger')}>
             <div className={styles.cardImage}>
               <Image src="/images/cheese_burger.png" alt="Cheese Burger" width={500} height={300} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
@@ -252,7 +218,7 @@ export default function Home() {
           </div>
 
           {/* Item 2 */}
-          <div className={styles.card}>
+          <div className={styles.card} onClick={() => setOrderItem('Sweet Bacon Burger')}>
             <div className={styles.cardImage}>
               <Image src="/images/sweet_bacon_burger.png" alt="Sweet Bacon Smash" width={500} height={300} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
@@ -264,7 +230,7 @@ export default function Home() {
           </div>
 
           {/* Item 3 */}
-          <div className={styles.card}>
+          <div className={styles.card} onClick={() => setOrderItem('Crispy Crispy Burger')}>
             <div className={styles.cardImage}>
               <Image src="/images/crispy_crispy_burger.png" alt="Crispy Chicken" width={500} height={300} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
@@ -276,7 +242,7 @@ export default function Home() {
           </div>
 
           {/* Item 4 */}
-          <div className={styles.card}>
+          <div className={styles.card} onClick={() => setOrderItem('Papas Estilo Pardo')}>
             <div className={styles.cardImage}>
               <Image src="/images/pardo_fries.png" alt="Pardo Fries" width={500} height={300} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
@@ -299,7 +265,7 @@ export default function Home() {
         ) : (
           <>
             <div className={styles.testimonialGrid}>
-              {reviews.map((r: any, i: number) => (
+              {reviews.slice(0, visibleReviews).map((r: any, i: number) => (
                 <div key={i} className={styles.testimonialCard}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
                     {r.authorAttribution?.photoUri && (
@@ -328,7 +294,7 @@ export default function Home() {
                             key={pIndex}
                             src={photoUrl}
                             alt="Review attached photo"
-                            onClick={() => setSelectedPhoto(photoUrl)}
+                            onClick={(e) => { e.stopPropagation(); setSelectedPhoto(photoUrl) }}
                             style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer', border: '1px solid #eee' }}
                           />
                         )
@@ -338,7 +304,7 @@ export default function Home() {
 
                   <div style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <button
-                      onClick={() => handleLikeReview(r.name)}
+                      onClick={(e) => { e.stopPropagation(); handleLikeReview(r.name) }}
                       style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
                     >
                       👍 Apoyar ({r.localLikes || 0})
@@ -347,6 +313,7 @@ export default function Home() {
                       href={r.authorAttribution?.uri || "https://maps.app.goo.gl/9ZfgFX8R8sMBfyTNA"}
                       target="_blank"
                       rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       style={{ fontSize: '0.8rem', color: '#888', textDecoration: 'underline' }}
                     >
                       Ver en Maps
@@ -355,6 +322,17 @@ export default function Home() {
                 </div>
               ))}
             </div>
+
+            {reviews.length > visibleReviews && (
+              <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+                <button
+                  onClick={() => setVisibleReviews(prev => prev + 6)}
+                  className={styles.secondaryButton}
+                >
+                  ➕ Cargar más testimonios
+                </button>
+              </div>
+            )}
           </>
         )}
       </section>
@@ -434,7 +412,7 @@ export default function Home() {
             <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>
               Este negocio opera digitalmente sobre la infraestructura tecnológica de <b>AEC (Amazing ERP Creator)</b>.
             </p>
-            <Link href="/portal" style={{ display: 'inline-block', marginTop: '1rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 'bold' }}>
+            <Link href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/system`} style={{ display: 'inline-block', marginTop: '1rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem 1rem', borderRadius: '4px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 'bold' }}>
               🏢 Intranet Empleados
             </Link>
           </div>
@@ -447,6 +425,56 @@ export default function Home() {
           </div>
         </div>
       </footer>
+      {/* INDEPENDENT PLATFORM SELECTOR MODAL (HIGHEST PRIORITY) */}
+      {orderItem && (
+         <div style={{
+           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+           background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+           display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 99999
+         }}>
+           <div style={{ 
+             background: '#1e293b', 
+             padding: '3rem', 
+             borderRadius: '24px', 
+             boxShadow: '0 25px 50px -12px rgba(0,0,0,1)', 
+             textAlign: 'center',
+             border: '1px solid rgba(255,255,255,0.1)',
+             maxWidth: '450px',
+             width: '90%'
+           }}>
+             <h3 style={{ fontSize: '1.8rem', color: '#f8fafc', marginBottom: '0.5rem' }}>Excelente elección</h3>
+             <p style={{ color: '#94a3b8', fontSize: '1.1rem', marginBottom: '2rem' }}>Pide tu <strong>{orderItem}</strong> ahora mismo por tu app favorita:</p>
+             
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+               <a 
+                 href="https://www.rappi.com.mx/restaurantes/1930332407-pardo-burger" 
+                 target="_blank" 
+                 rel="noopener noreferrer"
+                 onClick={() => setOrderItem(null)} 
+                 style={{
+                   background: '#ff441f', color: '#fff', padding: '15px 20px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px'
+                 }}
+               >
+                 🛵 Pedir por Rappi
+               </a>
+               <a 
+                 href="https://www.ubereats.com/mx/store/pardo-burger-puerto-vallarta/9j0Xryx1ROmi9avqkbcFJg" 
+                 target="_blank" 
+                 rel="noopener noreferrer" 
+                 onClick={() => setOrderItem(null)}
+                 style={{
+                   background: '#06C167', color: '#fff', padding: '15px 20px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px'
+                 }}
+               >
+                 🚙 Pedir por Uber Eats
+               </a>
+               <button onClick={() => setOrderItem(null)} style={{ background: 'transparent', border: '1px solid #475569', color: '#cbd5e1', padding: '15px', borderRadius: '12px', fontSize: '1rem', marginTop: '10px', cursor: 'pointer' }}>
+                 Cerrar
+               </button>
+             </div>
+           </div>
+         </div>
+      )}
     </main>
   );
 }
