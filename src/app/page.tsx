@@ -257,9 +257,10 @@ export default function Home() {
                   {r.photos && r.photos.length > 0 && (
                     <div style={{ display: 'flex', gap: '10px', marginTop: '1rem', overflowX: 'auto' }}>
                       {r.photos.map((photo: any, pIndex: number) => {
-                        // In Places API New, you need to construct the photo URL. 
-                        // We will pass the pre-constructed URI from the backend API.
-                        const photoUrl = photo.authorAttributions?.[0]?.photoUri || photo.uri || `https://places.googleapis.com/v1/${photo.name}/media?key=AIzaSyAKIaLmMYOKiVcXEHMWaWbDpZvBZu_oxZk&maxHeightPx=400&maxWidthPx=400`;
+                        // Simply use the securely proxied or directly returned URI 
+                        // The backend will now deliver fully signed/formed URLs.
+                        const photoUrl = photo.authorAttributions?.[0]?.photoUri || photo.uri || "";
+                        if (!photoUrl) return null;
                         return (
                           <img
                             key={pIndex}
