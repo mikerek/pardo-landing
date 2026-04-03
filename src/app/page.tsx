@@ -9,6 +9,7 @@ export default function Home() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [orderItem, setOrderItem] = useState<string | null>(null);
 
   // Track page visit on mount
   useEffect(() => {
@@ -131,32 +132,93 @@ export default function Home() {
       {/* MENU FULL SCREEN MODAL / LIGHTBOX */}
       {selectedPhoto && (
         <div
-          onClick={() => setSelectedPhoto(null)}
           style={{
             position: 'fixed',
             top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.85)',
+            backgroundColor: 'rgba(15,23,42,0.95)',
+            backdropFilter: 'blur(10px)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 9999,
-            cursor: 'pointer'
           }}
         >
-          <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }}>
+          <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}>
             <button
               onClick={() => setSelectedPhoto(null)}
-              style={{ position: 'absolute', top: '-40px', right: 0, background: 'none', border: 'none', color: 'white', fontSize: '2.5rem', cursor: 'pointer' }}
+              style={{ position: 'absolute', top: '20px', right: '30px', background: 'rgba(255,255,255,0.1)', padding: '10px 20px', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.2)', color: 'white', fontSize: '1.2rem', cursor: 'pointer', zIndex: 100 }}
             >
-              &times;
+              Cerrar &times;
             </button>
-            <div style={{ display: 'flex', gap: '20px', overflowX: 'auto', alignItems: 'center' }}>
-              <img src={selectedPhoto} alt="Zoomed Photo" style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', objectFit: 'contain' }} />
-              {/* If "Menu" is clicked, show both pages side by side if screen permits */}
-              {selectedPhoto === '/images/menu_one.png' && (
-                <img src="/images/menu_two.png" alt="Menu Page 2" style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', objectFit: 'contain' }} />
+
+            <div style={{ display: 'flex', gap: '30px', overflowX: 'auto', alignItems: 'center', maxWidth: '100%', maxHeight: '100%', paddingBottom: '20px' }}>
+              
+              {/* Menu 1 Wrapper */}
+              {(selectedPhoto === '/images/menu_one.png' || selectedPhoto) && (
+                <div style={{ position: 'relative', height: '85vh', aspectRatio: '715/1012', flexShrink: 0 }}>
+                  <img src="/images/menu_one.png" alt="Menu 1" style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', objectFit: 'contain' }} />
+                  
+                  {/* Invisible Hit Areas */}
+                  <button onClick={() => setOrderItem('Cali Burger')} style={{ position: 'absolute', top: '28%', left: '20%', width: '40%', height: '6%', background: 'transparent', border: 'none', cursor: 'pointer' }} aria-label="Order Cali Burger" />
+                  <button onClick={() => setOrderItem('Cheese Burger')} style={{ position: 'absolute', top: '47%', left: '20%', width: '45%', height: '6%', background: 'transparent', border: 'none', cursor: 'pointer' }} aria-label="Order Cheese Burger" />
+                  <button onClick={() => setOrderItem('Bacon Burger')} style={{ position: 'absolute', top: '63%', left: '20%', width: '45%', height: '6%', background: 'transparent', border: 'none', cursor: 'pointer' }} aria-label="Order Bacon Burger" />
+                  <button onClick={() => setOrderItem('Sweet Bacon Burger')} style={{ position: 'absolute', top: '80%', left: '20%', width: '65%', height: '6%', background: 'transparent', border: 'none', cursor: 'pointer' }} aria-label="Order Sweet Bacon Burger" />
+                </div>
+              )}
+
+              {/* Menu 2 Wrapper */}
+              {(selectedPhoto === '/images/menu_one.png' || selectedPhoto === '/images/menu_two.png') && (
+                <div style={{ position: 'relative', height: '85vh', aspectRatio: '715/1012', flexShrink: 0 }}>
+                  <img src="/images/menu_two.png" alt="Menu 2" style={{ width: '100%', height: '100%', borderRadius: '16px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', objectFit: 'contain' }} />
+                  
+                  {/* Invisible Hit Areas for Menu 2 */}
+                  <button onClick={() => setOrderItem('Sunny Side Burger')} style={{ position: 'absolute', top: '26%', left: '20%', width: '55%', height: '6%', background: 'transparent', border: 'none', cursor: 'pointer' }} aria-label="Order Sunny Side Burger" />
+                  <button onClick={() => setOrderItem('Crispy Crispy Burger')} style={{ position: 'absolute', top: '42%', left: '20%', width: '60%', height: '6%', background: 'transparent', border: 'none', cursor: 'pointer' }} aria-label="Order Crispy Crispy" />
+                  <button onClick={() => setOrderItem('Pardo Strips')} style={{ position: 'absolute', top: '58%', left: '20%', width: '50%', height: '6%', background: 'transparent', border: 'none', cursor: 'pointer' }} aria-label="Order Pardo Strips" />
+                  <button onClick={() => setOrderItem('Papas Estilo Pardo')} style={{ position: 'absolute', top: '81.5%', left: '15%', width: '35%', height: '6.5%', background: 'transparent', border: 'none', cursor: 'pointer' }} aria-label="Order Pardo Fries" />
+                </div>
               )}
             </div>
+
+            {/* PLATFORM SELECTOR SUB-MODAL */}
+            {orderItem && (
+               <div style={{
+                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                 background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+                 display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 200
+               }}>
+                 <div style={{ 
+                   background: '#1e293b', 
+                   padding: '3rem', 
+                   borderRadius: '24px', 
+                   boxShadow: '0 25px 50px -12px rgba(0,0,0,1)', 
+                   textAlign: 'center',
+                   border: '1px solid rgba(255,255,255,0.1)',
+                   maxWidth: '450px',
+                   width: '90%'
+                 }}>
+                   <h3 style={{ fontSize: '1.8rem', color: '#f8fafc', marginBottom: '0.5rem' }}>Excelente elección</h3>
+                   <p style={{ color: '#94a3b8', fontSize: '1.1rem', marginBottom: '2rem' }}>Pide tu <strong>{orderItem}</strong> ahora mismo por tu app favorita:</p>
+                   
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                     <a href="https://www.rappi.com.mx/restaurantes/1930332407-pardo-burger" target="_blank" rel="noopener noreferrer" style={{
+                       background: '#ff441f', color: '#fff', padding: '15px 20px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px'
+                     }}>
+                       🛵 Pedir por Rappi
+                     </a>
+                     <a href="https://www.ubereats.com/mx" target="_blank" rel="noopener noreferrer" style={{
+                       background: '#06C167', color: '#fff', padding: '15px 20px', borderRadius: '12px', fontSize: '1.2rem', fontWeight: 'bold', textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px'
+                     }}>
+                       🚙 Pedir por Uber Eats
+                     </a>
+                     <button onClick={() => setOrderItem(null)} style={{ background: 'transparent', border: '1px solid #475569', color: '#cbd5e1', padding: '15px', borderRadius: '12px', fontSize: '1rem', marginTop: '10px', cursor: 'pointer' }}>
+                       Cancelar
+                     </button>
+                   </div>
+                 </div>
+               </div>
+            )}
+            
           </div>
         </div>
       )}
@@ -185,7 +247,7 @@ export default function Home() {
             <div className={styles.cardContent}>
               <h3 className={styles.cardTitle}>Cheese Burger</h3>
               <p className={styles.cardDesc}>La tradicional e insuperable. Carne smash, doble queso americano fundido y nuestra Pardo Sauce secreta.</p>
-              <div className={styles.cardPrice}>$195 MXN <span style={{fontSize: '0.75rem', fontWeight: 'normal', opacity: 0.8}}>*Doble $255</span></div>
+              <div className={styles.cardPrice}>$195 MXN <span style={{ fontSize: '0.75rem', fontWeight: 'normal', opacity: 0.8 }}>*Doble $255</span></div>
             </div>
           </div>
 
@@ -197,7 +259,7 @@ export default function Home() {
             <div className={styles.cardContent}>
               <h3 className={styles.cardTitle}>Sweet Bacon Burger</h3>
               <p className={styles.cardDesc}>Crujiente tocino ahumado grueso con un toque dulce, queso suizo derretido y carne smash doradita.</p>
-              <div className={styles.cardPrice}>$210 MXN <span style={{fontSize: '0.75rem', fontWeight: 'normal', opacity: 0.8}}>*Doble $260</span></div>
+              <div className={styles.cardPrice}>$210 MXN <span style={{ fontSize: '0.75rem', fontWeight: 'normal', opacity: 0.8 }}>*Doble $260</span></div>
             </div>
           </div>
 
@@ -361,7 +423,7 @@ export default function Home() {
           <div style={{ flex: '1 1 200px' }}>
             <h4 style={{ color: '#f8fafc', fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>Soporte Comercial</h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.9rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <li><a href="mailto:hola@pardoburger.com" style={{ color: '#cbd5e1', textDecoration: 'none' }}>✉️ hola@pardo.menu</a></li>
+              <li><a href="mailto:hola@pardoburger.com" style={{ color: '#cbd5e1', textDecoration: 'none' }}>✉️ hola@pardoburger.com</a></li>
               <li><a href="https://wa.me/523223149867" style={{ color: '#cbd5e1', textDecoration: 'none' }}>📞 +52 322 314 9867</a></li>
               <li>Operación de Martes a Domingo</li>
             </ul>
