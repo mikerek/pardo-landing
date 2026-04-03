@@ -185,7 +185,7 @@ export default function Home() {
             <div className={styles.cardContent}>
               <h3 className={styles.cardTitle}>Classic Cheese Smash</h3>
               <p className={styles.cardDesc}>La tradicional e insuperable. Carne smash, doble queso americano fundido y nuestra Pardo Sauce secreta.</p>
-              <div className={styles.cardPrice}>$165 MXN</div>
+              <div className={styles.cardPrice}>$195 MXN</div>
             </div>
           </div>
 
@@ -197,7 +197,7 @@ export default function Home() {
             <div className={styles.cardContent}>
               <h3 className={styles.cardTitle}>Sweet Bacon Smash</h3>
               <p className={styles.cardDesc}>Crujiente tocino ahumado grueso con un toque dulce, queso suizo derretido y carne smash doradita.</p>
-              <div className={styles.cardPrice}>$185 MXN</div>
+              <div className={styles.cardPrice}>$210 MXN</div>
             </div>
           </div>
 
@@ -209,7 +209,7 @@ export default function Home() {
             <div className={styles.cardContent}>
               <h3 className={styles.cardTitle}>Crispy Chicken Burger</h3>
               <p className={styles.cardDesc}>Pechuga de pollo extra crujiente, jugosa por dentro. Coronado con deliciosa ensalada coleslaw fresca.</p>
-              <div className={styles.cardPrice}>$175 MXN</div>
+              <div className={styles.cardPrice}>$195 MXN</div>
             </div>
           </div>
 
