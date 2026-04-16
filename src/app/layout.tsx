@@ -15,7 +15,7 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: "Pardo Smash Burger | Puerto Vallarta",
-  description: "La mejor página para vender hamburguesas en Vallarta. Smash burgers reales, sabor inolvidable.",
+  description: "El auténtico sabor del Smash. Carne premium, pan brioche y el mejor ambiente en Vallarta.",
 };
 
 export default function RootLayout({
